@@ -1,0 +1,89 @@
+Importing all required libraries
+
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+
+
+# Define the dot matrix parameters
+dot_radius = 25
+num_rows = 5
+num_cols = 3
+image_width = 500
+image_height = 300
+
+Function to generate image
+
+
+
+# Define the dot matrix template for each digit (0-9)
+digit_templates = [
+    [[1, 1, 1], [1, 0, 1], [1, 0, 1], [1, 0, 1], [1, 1, 1]],  # Digit 0
+    [[0, 1, 0], [1, 1, 0], [0, 1, 0], [0, 1, 0], [1, 1, 1]],  # Digit 1
+    [[1, 1, 1], [0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 1]],  # Digit 2
+    [[1, 1, 1], [0, 0, 1], [1, 1, 1], [0, 0, 1], [1, 1, 1]],  # Digit 3
+    [[1, 0, 1], [1, 0, 1], [1, 1, 1], [0, 0, 1], [0, 0, 1]],  # Digit 4
+    [[1, 1, 1], [1, 0, 0], [1, 1, 1], [0, 0, 1], [1, 1, 1]],  # Digit 5
+    [[1, 1, 1], [1, 0, 0], [1, 1, 1], [1, 0, 1], [1, 1, 1]],  # Digit 6
+    [[1, 1, 1], [0, 0, 1], [0, 0, 1], [0, 1, 0], [0, 1, 0]],  # Digit 7
+    [[1, 1, 1], [1, 0, 1], [1, 1, 1], [1, 0, 1], [1, 1, 1]],  # Digit 8
+    [[1, 1, 1], [1, 0, 1], [1, 1, 1], [0, 0, 1], [0, 0, 1]]   # Digit 9
+]
+
+def generate_dot_matrix(digit):
+    # Create an empty dot matrix array
+    dot_matrix = np.zeros((num_rows * dot_radius, num_cols * dot_radius))
+
+    # Get the digit template for the given digit
+    template = digit_templates[digit]
+
+    # Generate the dot matrix based on the template
+    for row in range(num_rows):
+        for col in range(num_cols):
+            if template[row][col] == 1:
+                # Set the pixels inside the dot as white (pixel value 255)
+                dot_matrix[
+                    row * dot_radius : (row + 1) * dot_radius,
+                    col * dot_radius : (col + 1) * dot_radius
+                ] = 255
+
+    return dot_matrix
+
+
+
+
+Taking my roll number as input
+
+# Extract the last two digits from the input number
+input_number = 211051
+last_two_digits = str(input_number)[-2:]
+
+# Create the dot matrix image
+dot_matrix_image = np.zeros((image_height, image_width), dtype=np.uint8)
+
+# Generate and concatenate the dot matrices for the last two digits
+for i, digit in enumerate(last_two_digits):
+    dot_matrix = generate_dot_matrix(int(digit))
+    start_col = i * (num_cols * (2 * dot_radius)) + (num_cols - 1) * (2 * dot_radius)
+    end_col = start_col + dot_matrix.shape[1]
+    start_row = (image_height - dot_matrix.shape[0]) // 2
+    end_row = start_row + dot_matrix.shape[0]
+    dot_matrix_image[start_row:end_row, start_col:end_col] = dot_matrix
+
+# Create circular mask
+mask = np.zeros((2 * dot_radius, 2 * dot_radius), dtype=np.uint8)
+center = dot_radius
+y, x = np.ogrid[:2 * dot_radius, :2 * dot_radius]
+mask[(x - center) ** 2 + (y - center) ** 2 <= center ** 2] = 255
+
+# Resize mask to match dot matrix image size
+mask = np.tile(mask, (image_height // (2 * dot_radius), image_width // (2 * dot_radius)))
+
+# Apply circular mask to dot matrix image
+dot_matrix_image = np.where(mask == 255, dot_matrix_image, 255)
+
+# Display the dot matrix image
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.imshow(dot_matrix_image, cmap='gray')
+ax.axis('off')
+plt.show()
